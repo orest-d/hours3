@@ -10,7 +10,6 @@ if __name__ == '__main__':
         VuetifyDashboard(r, "Working Hours Registration")
         .with_navigation_drawer()
         .with_app_bar(color="primary")
-        .with_plotly()
         .with_panels()
     )
     login_button="""<v-btn @click="show_panel('admin_panel')">Login</v-btn>"""
@@ -64,6 +63,10 @@ if __name__ == '__main__':
     <v-row v-if="is_admin">
       <v-col><v-btn @click="show_panel('names_edit_panel')">Edit names</v-btn></v-col>
     </v-row>
+    <v-row v-if="is_admin">
+      <v-col><v-btn @click="erase()">Erase all data</v-btn></v-col>
+      <v-col><v-checkbox v-model="confirm_erase" label="Confirm"></v-checkbox></v-col>
+    </v-row>
     """)
     doc.panel("names_edit_panel").add("""
     <v-row v-if="!is_admin"><v-col>%s</v-col></v-row>
@@ -92,6 +95,7 @@ if __name__ == '__main__':
     </v-row>
     """%login_button)
     doc.panel("detail_panel").add("<h1>Edit hours - {{username}}</h1>")
+#    doc.panel("edit_panel").add("""<h1>Edit hours - {{username}}</h1>""")
     doc.panel("login_panel").add("""
     <v-row>
       <v-col>
@@ -115,16 +119,17 @@ if __name__ == '__main__':
 
     r.vuetify_script.add_method("login", """
     function(){
-            console.log("Login");
-            if (this.adminpass=="raneejar1234"){
-                this.admintime=Date.now();
-                console.log("Login successful, is_admin:",this.is_admin);
-            }
-            else{
-                this.admintime=0;
-                console.log("Login failed, is_admin:",this.is_admin);
-            }
-            this.adminpass="";
+        this.confirm_erase=false;
+        console.log("Login");
+        if (this.adminpass=="raneejar1234"){
+            this.admintime=Date.now();
+            console.log("Login successful, is_admin:",this.is_admin);
+        }
+        else{
+            this.admintime=0;
+            console.log("Login failed, is_admin:",this.is_admin);
+        }
+        this.adminpass="";
     }
     """)
 
@@ -187,6 +192,7 @@ if __name__ == '__main__':
         this.names = this.names.filter(function(x){
             return (x!=n); 
         });
+        this.store();
     }
     """)
     r.vuetify_script.add_method("new_user", """
@@ -194,6 +200,7 @@ if __name__ == '__main__':
         console.log("New user",this.new_username);
         this.names.push(this.new_username);
         this.new_username="";
+        this.store();
     }
     """)
     r.vuetify_script.add_method("set_user", """
@@ -238,6 +245,7 @@ if __name__ == '__main__':
         console.log("Start",name);
         var d = new Date();
         this.dataframe.data.push({
+            rowid:this.dataframe.data.length,
             name:name,
             year:d.getFullYear(),
             month:d.getMonth()+1,
@@ -320,19 +328,29 @@ if __name__ == '__main__':
 
     r.vuetify_script.add_method("store", """
     function(){
-        localStorage.setItem("hours_dataframe",this.dataframe);
-        localStorage.setItem("hours_names",this.names);
+        localStorage.setItem("hours_dataframe",JSON.stringify(this.dataframe));
+        localStorage.setItem("hours_names",JSON.stringify(this.names));
     }
     """)
     r.vuetify_script.add_method("restore", """
     function(){
-        var dataframe = localStorage.getItem("hours_dataframe");
+        var dataframe = JSON.parse(localStorage.getItem("hours_dataframe"));
         if (dataframe!=null){
             this.dataframe=dataframe;                
         }
-        var names = localStorage.getItem("hours_names");
+        var names = JSON.parse(localStorage.getItem("hours_names"));
         if (names!=null){
             this.names=names;                
+        }
+    }
+    """)
+
+    r.vuetify_script.add_method("erase", """
+    function(){
+        if (this.confirm_erase){
+            this.dataframe={data:[]};
+            this.names=[];
+            this.store();
         }
     }
     """)
@@ -349,13 +367,14 @@ if __name__ == '__main__':
     r.vuetify_script.add_data("show1", False)
     r.vuetify_script.add_data("adminpass", "")
     r.vuetify_script.add_data("admintime", 0)
+    r.vuetify_script.add_data("confirm_erase", False)
     r.vuetify_script.add_data("names", ["A","B"])
 
     r.vuetify_script.add_computed("is_admin", "return (Date.now()-this.admintime)<30*60*1000;")
 
     r.vuetify_script.add_created("""
       console.log('Start Hours');
-      //this.restore();
+      this.restore();
     """)
 
-    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
+    print(doc.render(RenderContext(link_type=LinkType.LINK)))

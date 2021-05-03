@@ -177,13 +177,12 @@ class VuetifyPanel(Segment):
             code += """ v-model='selected' """
         template_code = (
             """
-        <template v-slot:item.0="{ item }">
-            <v-btn v-if="is_admin" @click="row_action(item[0])" icon>
-                <v-icon>%s</v-icon>
+        <template v-slot:item.rowid="{ item }">
+            <v-btn v-if="is_admin" @click="row_action(item.rowid)">
+                Edit
             </v-btn>
         </template>
         """
-            % row_action_icon
         )
         self.add(
             f"""
@@ -233,7 +232,7 @@ class VuetifyPanel(Segment):
               <v-col>%s</v-col>
             </v-row>
         """
-                % ("{{selected_row[%d]}}" % i)
+                % ("{{selected_row.%s}}" % label)
                 for i, label in enumerate(labels)
                 if i > 0
             ),
@@ -814,7 +813,7 @@ Vue.component("plotly-chart", {
             df = df.copy()
             df[rowid_column] = np.arange(len(df))
             df = df[columns]
-            labels = ["#"] + labels
+            labels = [rowid_column] + labels
         self.df = df
         self.labels = labels
         r = self.register
