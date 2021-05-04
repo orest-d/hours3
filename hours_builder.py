@@ -40,6 +40,22 @@ if __name__ == '__main__':
       </v-row>
 
     """)
+    doc.panel("overview_panel").add("""
+      <h1>Overview</h1>
+      <v-row>
+          <v-col>
+            <v-data-table
+                
+                :headers="overview_headers"
+                :items="overview_all"
+                :items-per-page="10"
+                class="elevation-1"
+                :search="search"
+            >
+            </v-data-table>
+          </v-col>
+      </v-row>
+    """)
     doc.panel("admin_panel").add("""
     <v-row v-if="!is_admin">
       <v-col>
@@ -134,6 +150,7 @@ if __name__ == '__main__':
     """)
 
     doc.drawer_item("Home", icon="mdi-home", panel="home_panel")
+    doc.drawer_item("Overview", icon="mdi-table", panel="overview_panel")
     doc.drawer_item("Admin", icon="mdi-account", panel="admin_panel")
     #doc.drawer_item("Ranees", href="http://www.ranees.dk")
  
@@ -236,6 +253,59 @@ if __name__ == '__main__':
     #     return h+":"+m;
     # }
     # """)
+
+    r.vuetify_script.add_method("overview", """
+    function (name){
+        if (name==null){
+            name=this.username;
+        }
+        var data = this.dataframe.data.filter(function(x){
+            return (x.name==name); 
+        });
+        const to_key = function(x){
+            var month = ""+x.month;
+            if (month.length==1){
+                month="0"+month;
+            }
+            return x.year+"_"+month;
+        };
+        var keys=data.map(to_key);
+        var ukeys = keys.filter(function(value,index,self){return self.indexOf(value)===index;});
+        ukeys.sort();
+        ukeys = ukeys.slice(Math.max(ukeys.length - 3, 0));
+        var hours = {};
+        var year = {};
+        var month = {};
+        for (var i=0; i<data.length; i++){
+            var x = data[i];
+            var h = parseFloat(x.hours);
+            if (!isFinite(h)){
+                h=0;
+            }
+            var key = to_key(x);
+            year[key]=x.year;
+            month[key]=x.month;
+            if (key in hours){
+                hours[key]+=h;
+            }
+            else{
+                hours[key]=h;
+            }
+        }
+        var summary=ukeys.map(function(key){
+            return {name:name, year:year[key], month:month[key], hours:hours[key]};
+        });
+        return summary;
+    }
+    """)
+    r.vuetify_script.add_computed("overview_all", """
+        var all=[];
+        for (var i=0; i<this.names.length; i++){
+            var o = this.overview(this.names[i]);
+            Array.prototype.push.apply(all,o);
+        }
+        return all;
+    """)
 
     r.vuetify_script.add_method("start_working", """
     function (name){
@@ -370,6 +440,14 @@ if __name__ == '__main__':
     r.vuetify_script.add_data("admintime", 0)
     r.vuetify_script.add_data("confirm_erase", False)
     r.vuetify_script.add_data("names", ["A","B"])
+    r.vuetify_script.add_data("overview_headers", 
+        [
+            {"text": "Name", "value": "name", "sortable": True},
+            {"text": "Year", "value": "year", "sortable": True},
+            {"text": "Month", "value": "month", "sortable": True},
+            {"text": "Hours", "value": "hours", "sortable": True}
+        ]
+    )
 
     r.vuetify_script.add_computed("is_admin", "return (Date.now()-this.admintime)<30*60*1000;")
 
