@@ -182,8 +182,27 @@ class VuetifyPanel(Segment):
                 Edit
             </v-btn>
         </template>
-        """
-        )
+        <template v-slot:item.hours="props">
+            <v-edit-dialog
+            :return-value.sync="props.item.hours"
+            @save="save"
+            @cancel="cancel"
+            @open="open"
+            @close="close"
+            >
+            {{ props.item.hours }}
+            <template v-slot:input>
+                <v-text-field
+                v-if="is_admin"
+                v-model="props.item.hours"
+                label="Edit"
+                single-line
+                ></v-text-field>
+                <v-btn v-if="!is_admin" @click="show_panel('admin_panel')">Login</v-btn>
+            </template>
+            </v-edit-dialog>
+        </template>
+        """)
         self.add(
             f"""
         <v-card>

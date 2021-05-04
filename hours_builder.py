@@ -251,7 +251,7 @@ if __name__ == '__main__':
             month:d.getMonth()+1,
             start:d.toString(),
             end:"",
-            hours:"",
+            hours:"???",
         });
         this.store();
         this.update_user_filter();
@@ -350,6 +350,7 @@ if __name__ == '__main__':
         if (this.confirm_erase){
             this.dataframe={data:[]};
             this.names=[];
+            this.confirm_erase=false;
             this.store();
         }
     }
