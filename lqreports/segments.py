@@ -175,13 +175,15 @@ class VuetifyPanel(Segment):
         if show_select:
             code += f""" show-select single-select='{"true" if single_select else "false"}' """
             code += """ v-model='selected' """
+#        template_code = (
+#            """
+#        <template v-slot:item.rowid="{ item }">
+#            <v-btn v-if="is_admin()" @click="row_action(item.rowid)">
+#                Edit
+#            </v-btn>
+#        </template>
         template_code = (
             """
-        <template v-slot:item.rowid="{ item }">
-            <v-btn v-if="is_admin" @click="row_action(item.rowid)">
-                Edit
-            </v-btn>
-        </template>
         <template v-slot:item.hours="props">
             <v-edit-dialog
             :return-value.sync="props.item.hours"
@@ -193,12 +195,12 @@ class VuetifyPanel(Segment):
             {{ props.item.hours }}
             <template v-slot:input>
                 <v-text-field
-                v-if="is_admin"
+                v-if="is_admin()"
                 v-model="props.item.hours"
                 label="Edit"
                 single-line
                 ></v-text-field>
-                <v-btn v-if="!is_admin" @click="show_panel('admin_panel')">Login</v-btn>
+                <v-btn v-if="!is_admin()" @click="show_panel('admin_panel')">Login</v-btn>
             </template>
             </v-edit-dialog>
         </template>
@@ -601,7 +603,15 @@ class VuetifyDashboard(VuetifyDocument):
         r.vuetify_script.add_data("visible_panel", "home_panel")
         r.vuetify_script.add_method(
             "show_panel",
-            """function(panel){console.log("Show",panel);this.visible_panel=panel;this.app_drawer=false;}""",
+            """
+        function(panel){
+            console.log("Show",panel);
+            this.visible_panel=panel;
+            this.app_drawer=false;
+            this.store();
+            this.dataframe_json="";
+            this.names_json="";
+        }"""
         )
         self.panel("home_panel")
         return self
@@ -704,14 +714,16 @@ class VuetifyDashboard(VuetifyDocument):
             )
         )
         r = self.register
+        admintime="{{remaining_admintime()}}"
         r.app.add(
             Segment(
                 "app_bar",
                 r,
                 prefix=f"""
-        <v-app-bar app {attributes}>
+        <v-app-bar app :color="is_admin()?'red':'primary'">
             <v-app-bar-nav-icon @click="app_drawer = !app_drawer"></v-app-bar-nav-icon>
             <v-toolbar-title>{title} &nbsp;</v-toolbar-title>
+            <v-btn v-if="is_admin()" @click="logout()">Logout</v-btn>
 """,
                 suffix=f"</v-app-bar>\n",
             )

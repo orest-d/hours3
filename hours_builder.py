@@ -57,7 +57,7 @@ if __name__ == '__main__':
       </v-row>
     """)
     doc.panel("admin_panel").add("""
-    <v-row v-if="!is_admin">
+    <v-row v-if="!is_admin()">
       <v-col>
         <v-text-field
             v-model="adminpass"
@@ -71,22 +71,25 @@ if __name__ == '__main__':
           ></v-text-field>
       </v-col>
     </v-row>
-    <v-row v-if="!is_admin">
+    <v-row v-if="!is_admin()">
       <v-col>
         <v-btn @click="login()">Login</v-btn>
       </v-col>
     </v-row>
-    <v-row v-if="is_admin">
+    <v-row v-if="is_admin()">
       <v-col><v-btn @click="show_panel('names_edit_panel')">Edit names</v-btn></v-col>
     </v-row>
-    <v-row v-if="is_admin">
+    <v-row v-if="is_admin()">
       <v-col><v-btn @click="erase()">Erase all data</v-btn></v-col>
       <v-col><v-checkbox v-model="confirm_erase" label="Confirm"></v-checkbox></v-col>
     </v-row>
+    <v-row v-if="is_admin()">
+      <v-col><v-btn @click="show_panel('raw_panel')">Edit raw data</v-btn></v-col>
+    </v-row>
     """)
     doc.panel("names_edit_panel").add("""
-    <v-row v-if="!is_admin"><v-col>%s</v-col></v-row>
-    <v-row v-if="is_admin">
+    <v-row v-if="!is_admin()"><v-col>%s</v-col></v-row>
+    <v-row v-if="is_admin()">
     <v-col>
       <v-row v-for="(n, index) in names" :key="index">
           <v-col>
@@ -132,6 +135,26 @@ if __name__ == '__main__':
       </v-col>
     </v-row>
     """)
+    doc.panel("raw_panel").add("""<h1>Raw data</h1>
+    <v-card v-if="is_admin()">
+    <v-row v-if="json_error.length"><v-col>
+    <v-chip>{{json_error}}</v-chip>
+    </v-col></v-row>
+    <v-row><v-col>
+    <v-btn @click="get_json()">get</v-btn>
+    <v-btn @click="set_json()">set</v-btn>
+    </v-col>
+    </v-row>
+    
+    <v-row><v-col>
+    <v-textarea solo v-model="names_json"></v-textarea>
+    </v-col></v-row>
+    <v-row><v-col>
+    <v-textarea solo v-model="dataframe_json"></v-textarea>
+    </v-col></v-row>
+    </v-card>
+    """)
+
 
     r.vuetify_script.add_method("login", """
     function(){
@@ -139,13 +162,21 @@ if __name__ == '__main__':
         console.log("Login");
         if (this.adminpass=="raneejar1234"){
             this.admintime=Date.now();
-            console.log("Login successful, is_admin:",this.is_admin);
+            console.log("Login successful, is_admin:",this.is_admin());
         }
         else{
             this.admintime=0;
-            console.log("Login failed, is_admin:",this.is_admin);
+            console.log("Login failed, is_admin:",this.is_admin());
         }
         this.adminpass="";
+    }
+    """)
+    r.vuetify_script.add_method("logout", """
+    function(){
+        console.log("Logout");
+        this.admintime=0;
+        this.adminpass="";
+        this.show_panel("home_panel");
     }
     """)
 
@@ -404,13 +435,25 @@ if __name__ == '__main__':
     """)
     r.vuetify_script.add_method("restore", """
     function(){
-        var dataframe = JSON.parse(localStorage.getItem("hours_dataframe"));
-        if (dataframe!=null){
-            this.dataframe=dataframe;                
+        try{
+            this.json_error="OK";
+            var dataframe = JSON.parse(localStorage.getItem("hours_dataframe"));
+            if (dataframe!=null){
+                this.dataframe=dataframe;                
+            }
+            else{
+                this.json_error="Restore failed: null dataframe";      
+            }
+            var names = JSON.parse(localStorage.getItem("hours_names"));
+            if (names!=null){
+                this.names=names;                
+            }
+            else{
+                this.json_error="Restore failed: null names";      
+            }
         }
-        var names = JSON.parse(localStorage.getItem("hours_names"));
-        if (names!=null){
-            this.names=names;                
+        catch(e){
+            this.json_error="Restore failed:"+e;
         }
     }
     """)
@@ -423,6 +466,38 @@ if __name__ == '__main__':
             this.confirm_erase=false;
             this.store();
         }
+    }
+    """)
+
+    r.vuetify_script.add_method("get_json", """
+    function(){
+        this.dataframe_json=JSON.stringify(this.dataframe);
+        this.names_json = JSON.stringify(this.names);
+    }
+    """)
+    r.vuetify_script.add_method("set_json", """
+    function(){
+        try{
+            this.json_error="";
+            var dataframe = JSON.parse(this.dataframe_json);
+            if (dataframe!=null){
+                this.dataframe=dataframe;
+            }
+            else{
+                this.json_error="Set JSON failed: dataframe is null";
+            }
+            var names = JSON.parse(this.names_json);
+            if (names!=null){
+                this.names=names;                
+            }
+            else{
+                this.json_error="Set JSON failed: names is null";
+            }
+        }
+        catch(e){
+            this.json_error="Set JSON failed:"+e;
+        }
+
     }
     """)
 
@@ -448,8 +523,21 @@ if __name__ == '__main__':
             {"text": "Hours", "value": "hours", "sortable": True}
         ]
     )
+    r.vuetify_script.add_data("dataframe_json", "")
+    r.vuetify_script.add_data("names_json", "")
+    r.vuetify_script.add_data("json_error", "")
 
-    r.vuetify_script.add_computed("is_admin", "return (Date.now()-this.admintime)<30*60*1000;")
+    r.vuetify_script.add_method("is_admin", """
+    function(){
+       return this.remaining_admintime()>0;
+    }
+    """)
+
+    r.vuetify_script.add_method("remaining_admintime", """
+    function(){
+       return (15-(Date.now()-this.admintime)/(60*1000));
+    }
+    """)
 
     r.vuetify_script.add_created("""
       console.log('Start Hours');
