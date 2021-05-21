@@ -449,6 +449,7 @@ class VuetifyScript(Segment):
         super().__init__("vuetify_script", register)
         r = self.register
         self.add("    <script>\n")
+        self.add(Segment("before_init_vue", r))
         self.add(Segment("init_vue", r))
         self.add(Segment("vue_components", r))
         self.add(

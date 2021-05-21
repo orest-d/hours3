@@ -12,6 +12,33 @@ if __name__ == '__main__':
         .with_app_bar(color="primary")
         .with_panels()
     )
+    r.header.add("""
+  <!-- Responsive -->
+  <meta charset="utf-8">
+  <meta name="viewport"content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    
+  <!-- Meta Tags requred for Progressive Web App -->
+  <meta name="apple-mobile-web-app-status-bar" content="#aa7700">
+  <meta name="theme-color" content="black">
+  
+  <!-- Manifest File link -->
+  <link rel="manifest" href="manifest.json">    
+    """)
+    r.before_init_vue.add("""
+    window.addEventListener('load', function(){registerSW();});
+  
+    async function registerSW() {
+      if ('serviceWorker' in navigator) {
+        try {
+          await navigator.serviceWorker.register('serviceworker.js');
+        }
+        catch (e) {
+          console.log('Service worker registration failed');
+        }
+      }
+    }
+    """)
     login_button="""<v-btn @click="show_panel('admin_panel')">Login</v-btn>"""
     doc.panel("home_panel", fluid=True).add("""
       <v-row v-for="n in names">
@@ -544,4 +571,4 @@ if __name__ == '__main__':
       this.restore();
     """)
 
-    print(doc.render(RenderContext(link_type=LinkType.LINK)))
+    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))

@@ -1,0 +1,22 @@
+{
+    "name":"Hours Registration",
+    "short_name":"Hours",
+    "start_url":"index.html",
+    "display":"standalone",
+    "background_color":"#EEEEEE",
+    "theme_color":"black",
+    "scope": ".",
+    "description":"Working hours registration app",
+    "icons":[
+    {
+    "src":"images/icon-192x192.png",                      
+    "sizes":"192x192",
+    "type":"image/png"
+    },
+    {
+    "src":"images/icon-512x512.png",
+    "sizes":"512x512",
+    "type":"image/png"
+    }
+  ]
+}
