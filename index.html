@@ -44,7 +44,7 @@
           </v-col>
           <v-col v-if="is_started(username)">
             <v-btn color="red" large @click="stop_working(username)">Stop</v-btn>
-            Working {{last_hours(username)}} hours.
+            Working {{format_hours_min(last_hours(username))}}.
           </v-col>
       </v-row>
 
@@ -79,7 +79,7 @@
             @open="open"
             @close="close"
             >
-            {{ props.item.hours }}
+            {{format_hours(props.item.hours)}}
             <template v-slot:input>
                 <v-text-field
                 v-if="is_admin()"
@@ -516,7 +516,8 @@
             return;
         }
         this.dataframe.data[index].end = d.toString();
-        this.dataframe.data[index].hours = Math.trunc(this.last_hours(name)*2)/2;
+        //this.dataframe.data[index].hours = Math.trunc(this.last_hours(name)*2)/2;
+        this.dataframe.data[index].hours = this.last_hours(name);
         this.store();
         this.update_user_filter();
     }
@@ -533,6 +534,55 @@
             }
         }
         return index;
+    }
+    ,
+        format_hours: 
+    function (hours){
+        console.log("format_hours",hours);
+        if (hours==null || hours==undefined || hours==NaN){
+            return "";
+        }
+        var h = Math.trunc(hours);
+        if (isNaN(h)){
+            return "";
+        }
+        var m = Math.trunc(hours*60)-h*60;
+        if (m==0){
+            m= "00";
+        }
+        else{
+          if (m<10){
+              m = "0"+m;
+          }
+        }
+        console.log("formated",hours,h,m);
+        var hh= ""+h+":"+m;
+        return hh;
+    }
+    ,
+        format_hours_min: 
+    function (hours){
+        console.log("format_hours_min",hours);
+        if (hours==null || hours==undefined || hours==NaN){
+            return "";
+        }
+        var h = Math.trunc(hours);
+        if (isNaN(h)){
+            return "";
+        }
+        var m = Math.trunc(hours*60)-h*60;
+        if (h==0){
+            h="";
+        }
+        else if (h==1){
+            h=""+h+" hour,";
+        }
+        else{
+            h=""+h+" hours,";
+        }
+        console.log("formated",hours,h,m);
+        var hh= ""+h+" "+m+" minutes";
+        return hh;
     }
     ,
         last_hours: 
@@ -642,6 +692,32 @@
         remaining_admintime: 
     function(){
        return (15-(Date.now()-this.admintime)/(60*1000));
+    }
+    ,
+        save: 
+    function(){
+        this.snack = true
+        this.snackColor = 'success'
+        this.snackText = 'Data saved'
+    }
+    ,
+        cancel: 
+    function(){
+        this.snack = true
+        this.snackColor = 'error'
+        this.snackText = 'Canceled'
+    }
+    ,
+        open: 
+    function(){
+        this.snack = true
+        this.snackColor = 'info'
+        this.snackText = 'Dialog opened'
+    }
+    ,
+        close: 
+    function(){
+        console.log('Dialog closed')
     }
     
       },
