@@ -59,7 +59,7 @@ if __name__ == '__main__':
           </v-col>
           <v-col v-if="is_started(username)">
             <v-btn color="red" large @click="stop_working(username)">Stop</v-btn>
-            Working {{last_hours(username)}} hours.
+            Working {{format_hours_min(last_hours(username))}}.
           </v-col>
       </v-row>
 
@@ -428,10 +428,13 @@ if __name__ == '__main__':
     r.vuetify_script.add_method("format_hours", """
     function (hours){
         console.log("format_hours",hours);
-        if (hours==null || hours==undefined){
+        if (hours==null || hours==undefined || hours==NaN){
             return "";
         }
         var h = Math.trunc(hours);
+        if (isNaN(h)){
+            return "";
+        }
         var m = Math.trunc(hours*60)-h*60;
         if (m==0){
             m= "00";
@@ -442,7 +445,33 @@ if __name__ == '__main__':
           }
         }
         console.log("formated",hours,h,m);
-        return ""+h+":"+m;
+        var hh= ""+h+":"+m;
+        return hh;
+    }
+    """)
+    r.vuetify_script.add_method("format_hours_min", """
+    function (hours){
+        console.log("format_hours_min",hours);
+        if (hours==null || hours==undefined || hours==NaN){
+            return "";
+        }
+        var h = Math.trunc(hours);
+        if (isNaN(h)){
+            return "";
+        }
+        var m = Math.trunc(hours*60)-h*60;
+        if (h==0){
+            h="";
+        }
+        else if (h==1){
+            h=""+h+" hour,";
+        }
+        else{
+            h=""+h+" hours,";
+        }
+        console.log("formated",hours,h,m);
+        var hh= ""+h+" "+m+" minutes";
+        return hh;
     }
     """)
 
@@ -620,5 +649,5 @@ if __name__ == '__main__':
     }
     """)
 
-#    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
-    print(doc.render(RenderContext()))
+    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
+#    print(doc.render(RenderContext()))
