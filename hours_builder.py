@@ -403,7 +403,8 @@ if __name__ == '__main__':
             return;
         }
         this.dataframe.data[index].end = d.toString();
-        this.dataframe.data[index].hours = Math.trunc(this.last_hours(name)*2)/2;
+        //this.dataframe.data[index].hours = Math.trunc(this.last_hours(name)*2)/2;
+        this.dataframe.data[index].hours = this.last_hours(name);
         this.store();
         this.update_user_filter();
     }
@@ -421,6 +422,27 @@ if __name__ == '__main__':
             }
         }
         return index;
+    }
+    """)
+
+    r.vuetify_script.add_method("format_hours", """
+    function (hours){
+        console.log("format_hours",hours);
+        if (hours==null || hours==undefined){
+            return "";
+        }
+        var h = Math.trunc(hours);
+        var m = Math.trunc(hours*60)-h*60;
+        if (m==0){
+            m= "00";
+        }
+        else{
+          if (m<10){
+              m = "0"+m;
+          }
+        }
+        console.log("formated",hours,h,m);
+        return ""+h+":"+m;
     }
     """)
 
@@ -571,4 +593,32 @@ if __name__ == '__main__':
       this.restore();
     """)
 
-    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
+    r.vuetify_script.add_method("save", """
+    function(){
+        this.snack = true
+        this.snackColor = 'success'
+        this.snackText = 'Data saved'
+    }
+    """)
+    r.vuetify_script.add_method("cancel", """
+    function(){
+        this.snack = true
+        this.snackColor = 'error'
+        this.snackText = 'Canceled'
+    }
+    """)
+    r.vuetify_script.add_method("open", """
+    function(){
+        this.snack = true
+        this.snackColor = 'info'
+        this.snackText = 'Dialog opened'
+    }
+    """)
+    r.vuetify_script.add_method("close", """
+    function(){
+        console.log('Dialog closed')
+    }
+    """)
+
+#    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
+    print(doc.render(RenderContext()))

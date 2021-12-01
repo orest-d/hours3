@@ -192,7 +192,7 @@ class VuetifyPanel(Segment):
             @open="open"
             @close="close"
             >
-            {{ props.item.hours }}
+            {{format_hours(props.item.hours)}}
             <template v-slot:input>
                 <v-text-field
                 v-if="is_admin()"
