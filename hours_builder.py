@@ -373,11 +373,12 @@ if __name__ == '__main__':
         console.log("Start",name);
         var d = new Date();
         this.dataframe.data.push({
+            index:this.dataframe.data.length,
             rowid:this.dataframe.data.length,
             name:name,
             year:d.getFullYear(),
             month:d.getMonth()+1,
-            start:d.toString(),
+            start:d.toISOString(),
             end:"",
             hours:"???",
         });
@@ -402,7 +403,7 @@ if __name__ == '__main__':
             console.log("Stop ignored - no last",name);
             return;
         }
-        this.dataframe.data[index].end = d.toString();
+        this.dataframe.data[index].end = d.toISOString();
         //this.dataframe.data[index].hours = Math.trunc(this.last_hours(name)*2)/2;
         this.dataframe.data[index].hours = this.last_hours(name);
         this.store();
@@ -505,13 +506,33 @@ if __name__ == '__main__':
     }
     """)
 
+    r.vuetify_script.add_method("error", """
+    function(message){
+        console.log("ERROR",message);
+        this.json_error=message;
+    }
+    """)
+
     r.vuetify_script.add_method("store", """
     function(){
-        localStorage.setItem("hours_dataframe",JSON.stringify(this.dataframe));
-        localStorage.setItem("hours_names",JSON.stringify(this.names));
+//        this.store_localstore();
+        this.store_liquerstore();
     }
     """)
     r.vuetify_script.add_method("restore", """
+    function(){
+//        this.restore_localstore();
+        this.restore_liquerstore();
+    }
+    """)
+
+    r.vuetify_script.add_method("store_localstore", """
+    function(){
+        localStorage.setItem("hours_dataframe",JSON.stringify(this.dataframe));
+        localStorage.setItem("hours_names",JSON.stringify(this.names));       
+    }
+    """)
+    r.vuetify_script.add_method("restore_localstore", """
     function(){
         try{
             this.json_error="OK";
@@ -533,6 +554,57 @@ if __name__ == '__main__':
         catch(e){
             this.json_error="Restore failed:"+e;
         }
+    }
+    """)
+
+    r.vuetify_script.add_method("store_liquerstore", """
+    function(){
+      this.$http.post("/liquer/api/store/data/data/hours_dataframe.json", JSON.stringify(this.dataframe)).then(
+        function (response) {
+            console.log("posted hours dataframe",response);
+        }.bind(this),
+        function (reason) {
+          this.error("Failed post data", reason);
+        }.bind(this)
+      )
+      this.$http.post("/liquer/api/store/data/data/hours_names.json", JSON.stringify(this.names)).then(
+        function (response) {
+            console.log("posted names",response);
+        }.bind(this),
+        function (reason) {
+          this.error("Failed post data", reason);
+        }.bind(this)
+      )
+    }
+    """)
+    r.vuetify_script.add_method("restore_liquerstore", """
+    function(){
+        this.$http.get("/liquer/api/store/data/data/hours_dataframe.json").then(function (response) {
+            response.json().then(function (data) {
+                if (data.status!=undefined){
+                    console.log("Error reading dataframe",data.message);
+                    console.log("Data:",data);
+                    this.dataframe={};
+                }
+                else{
+                    this.dataframe = data;
+                    console.log("Dataframe reading OK",data);
+                }
+            }.bind(this), function (reason) { this.error("Json error (reading dataframe)", reason); }.bind(this));
+        }.bind(this), function (reason) { this.error("Error reading dataframe", reason); }.bind(this));
+        this.$http.get("/liquer/api/store/data/data/hours_names.json").then(function (response) {
+            response.json().then(function (data) {
+                if (data.status!=undefined){
+                    console.log("Error reading names",data.message);
+                    console.log("Data:",data);
+                    this.names=[];
+                }
+                else{
+                    this.names = data;
+                    console.log("Names reading OK",data);
+                }
+            }.bind(this), function (reason) { this.error("Json error (reading names)", reason); }.bind(this));
+        }.bind(this), function (reason) { this.error("Error reading names", reason); }.bind(this));
     }
     """)
 
@@ -605,6 +677,28 @@ if __name__ == '__main__':
     r.vuetify_script.add_data("names_json", "")
     r.vuetify_script.add_data("json_error", "")
 
+    r.vuetify_script.add_method("test_store", """
+    function(){
+      console.log('test_store');
+      this.$http.get("/liquer/api/store/data/data/readme.txt").then(
+        function (response) {
+            console.log("response:",response.body);
+        }.bind(this),
+        function (reason) {
+          this.error("Failed loading data", reason, query);
+        }.bind(this)
+      );
+      this.$http.post("/liquer/api/store/data/data/test.txt", "Hello").then(
+        function (response) {
+            console.log("posted",response);
+        }.bind(this),
+        function (reason) {
+          this.error("Failed post data", reason);
+        }.bind(this)
+      )
+    }
+    """)
+
     r.vuetify_script.add_method("is_admin", """
     function(){
        return this.remaining_admintime()>0;
@@ -620,6 +714,7 @@ if __name__ == '__main__':
     r.vuetify_script.add_created("""
       console.log('Start Hours');
       this.restore();
+      this.test_store();
     """)
 
     r.vuetify_script.add_method("save", """
@@ -649,5 +744,5 @@ if __name__ == '__main__':
     }
     """)
 
-    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
-#    print(doc.render(RenderContext()))
+#    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
+    print(doc.render(RenderContext()))
