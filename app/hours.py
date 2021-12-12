@@ -8,6 +8,8 @@ import liquer.ext.meta
 import liquer.ext.lq_pandas
 from liquer.context import RecipeSpecStore
 from liquer.store import web_mount, mount, FileStore
+from flask import abort, redirect, url_for
+import webbrowser
 
 ### Create Flask app and register LiQuer blueprint
 from flask import Flask
@@ -26,8 +28,10 @@ def hello():
 @app.route('/')
 @app.route('/index.html')
 def index():
-    return open("../index.html").read()
+    return redirect("/liquer/api/store/data/data/index.html")
+#    return open("../index.html").read()
 
 
 if __name__ == '__main__':
+    webbrowser.open_new("http://127.0.0.1:5000")
     app.run()
