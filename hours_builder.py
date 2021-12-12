@@ -3,8 +3,9 @@ sys.path.append("..")
 
 import matplotlib.pyplot as plt
 from lqreports.segments import *
+from pathlib import Path
 
-if __name__ == '__main__':
+def render(use_liquerstore, init_from_localstore, use_dataurl=False):
     r = Register()
     doc = (
         VuetifyDashboard(r, "Working Hours Registration")
@@ -513,18 +514,28 @@ if __name__ == '__main__':
     }
     """)
 
-    r.vuetify_script.add_method("store", """
-    function(){
-//        this.store_localstore();
-        this.store_liquerstore();
-    }
-    """)
-    r.vuetify_script.add_method("restore", """
-    function(){
-//        this.restore_localstore();
-        this.restore_liquerstore();
-    }
-    """)
+    if use_liquerstore:
+        r.vuetify_script.add_method("store", """
+        function(){
+            this.store_liquerstore();
+        }
+        """)
+        r.vuetify_script.add_method("restore", """
+        function(){
+            this.restore_liquerstore();
+        }
+        """)
+    else:
+        r.vuetify_script.add_method("store", """
+        function(){
+            this.store_localstore();
+        }
+        """)
+        r.vuetify_script.add_method("restore", """
+        function(){
+            this.restore_localstore();
+        }
+        """)
 
     r.vuetify_script.add_method("store_localstore", """
     function(){
@@ -711,11 +722,17 @@ if __name__ == '__main__':
     }
     """)
 
-    r.vuetify_script.add_created("""
-      console.log('Start Hours');
-      this.restore();
-//      this.test_store();
-    """)
+    if init_from_localstore:
+        r.vuetify_script.add_created("""
+        console.log('Start Hours');
+        this.restore_localstore();
+        """)
+    else:
+        r.vuetify_script.add_created("""
+        console.log('Start Hours');
+        this.restore();
+        """)
+
 
     r.vuetify_script.add_method("save", """
     function(){
@@ -744,5 +761,21 @@ if __name__ == '__main__':
     }
     """)
 
-#    print(doc.render(RenderContext(link_type=LinkType.DATAURL)))
-    print(doc.render(RenderContext()))
+    if use_dataurl:
+        return (doc.render(RenderContext(link_type=LinkType.DATAURL)))
+    else:
+        return (doc.render(RenderContext()))
+
+if __name__ == '__main__':
+    for use_liquerstore, init_from_localstore, path in [
+        (False, False,"index.html"),
+        (True, False,"app/dist/data/index.html"),
+        (True, True, "app/dist/data/init.html"),
+        (False, False, "app/dist/data/localstore.html"),
+        (True, False,"app/data/index.html"),
+        (True, True, "app/data/init.html"),]:
+        (False, False, "app/data/localstore.html"),
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(path,"w") as f:
+            f.write(render(use_liquerstore, init_from_localstore))
