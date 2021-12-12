@@ -405,7 +405,7 @@ if __name__ == '__main__':
         }
         this.dataframe.data[index].end = d.toISOString();
         //this.dataframe.data[index].hours = Math.trunc(this.last_hours(name)*2)/2;
-        this.dataframe.data[index].hours = this.last_hours(name);
+        this.dataframe.data[index].hours = this.last_hours(name).toString();
         this.store();
         this.update_user_filter();
     }
@@ -677,27 +677,27 @@ if __name__ == '__main__':
     r.vuetify_script.add_data("names_json", "")
     r.vuetify_script.add_data("json_error", "")
 
-    r.vuetify_script.add_method("test_store", """
-    function(){
-      console.log('test_store');
-      this.$http.get("/liquer/api/store/data/data/readme.txt").then(
-        function (response) {
-            console.log("response:",response.body);
-        }.bind(this),
-        function (reason) {
-          this.error("Failed loading data", reason, query);
-        }.bind(this)
-      );
-      this.$http.post("/liquer/api/store/data/data/test.txt", "Hello").then(
-        function (response) {
-            console.log("posted",response);
-        }.bind(this),
-        function (reason) {
-          this.error("Failed post data", reason);
-        }.bind(this)
-      )
-    }
-    """)
+    # r.vuetify_script.add_method("test_store", """
+    # function(){
+    #   console.log('test_store');
+    #   this.$http.get("/liquer/api/store/data/data/readme.txt").then(
+    #     function (response) {
+    #         console.log("response:",response.body);
+    #     }.bind(this),
+    #     function (reason) {
+    #       this.error("Failed loading data", reason, query);
+    #     }.bind(this)
+    #   );
+    #   this.$http.post("/liquer/api/store/data/data/test.txt", "Hello").then(
+    #     function (response) {
+    #         console.log("posted",response);
+    #     }.bind(this),
+    #     function (reason) {
+    #       this.error("Failed post data", reason);
+    #     }.bind(this)
+    #   )
+    # }
+    # """)
 
     r.vuetify_script.add_method("is_admin", """
     function(){
@@ -714,7 +714,7 @@ if __name__ == '__main__':
     r.vuetify_script.add_created("""
       console.log('Start Hours');
       this.restore();
-      this.test_store();
+//      this.test_store();
     """)
 
     r.vuetify_script.add_method("save", """
